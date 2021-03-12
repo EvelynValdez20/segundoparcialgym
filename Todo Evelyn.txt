@@ -1,0 +1,59 @@
+--Tigger
+--Creamos tabla historial cliente
+create table historia_cliente
+(
+id integer,
+nombre character varying,
+membresia integer
+)
+
+--Crear funcion que retorne trigger
+CREATE OR REPLACE FUNCTION cambiar_membresia() RETURNS TRIGGER AS $insertar$
+DECLARE BEGIN
+	INSERT INTO historia_cliente VALUES(OLD.cli_id,OLD.nombre,OLD.men_id);
+	RETURN NULL;
+END;
+$insertar$ LANGUAGE plpgsql;
+
+create TRIGGER actualizar_membresia AFTER UPDATE
+On CLIENTE FOR EACH ROW
+EXECUTE PROCEDURE cambiar_membresia();
+
+update CLIENTE set men_id=1  where cli_id = 4
+
+select * from cliente order by cli_id
+select * from historia_cliente
+
+--Cursor
+-- 2do Parcial. Un cursor que muestre las personas que se han inscrito al gimnasio desde la fecha 10/05/2014 hasta
+-- la fecha 10/05/2015 
+do $$
+declare
+	registro Record;
+	Cur_nombres Cursor for select
+	*
+	from "cliente"
+	where cliente.fechaincrispcion >= '10/05/2014' and cliente.fechaincrispcion <='10/05/2015';
+begin
+for registro in Cur_nombres loop
+Raise Notice 'Id: % Nombre:% % Fecha: % Cedula: %',registro.cli_id,registro.nombre,registro.apellido,registro.fechaincrispcion,registro.cedula;
+end loop;
+end $$
+Language 'plpgsql';
+--Procedimiento Almacenado
+--Procedimiento almacenado para ingresar un tipo de membresia y que nos devuelva la cantidad de clientes que tienen asignado ese tipo de membresia
+create or replace function obtener_inscripcion(
+	IN cliente_membresia varchar,
+	OUT total_inscripciones varchar
+)
+as $BODY$
+begin 
+	select count(distinct cliente.cli_Id)into total_inscripciones
+	from cliente
+	inner join membresia on membresia.men_id = cliente.men_id
+	where cliente_membresia = tipo;
+end $BODY$
+language plpgsql;
+
+select * from obtener_inscripcion('semanal')
+select * from cliente order by cli_id
